@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RepositoryUrl>https://github.com/Notalib/Bux</RepositoryUrl>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <Version>2.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.556" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="build/Nota.CodeAnalysis.props" Pack="true" PackagePath="/build" />
+    <None Include="content/.editorconfig" Pack="true" PackagePath="/content" />
+  </ItemGroup>
+</Project>
