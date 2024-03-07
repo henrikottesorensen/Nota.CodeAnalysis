@@ -1,0 +1,65 @@
+trigger: none
+pr: none
+
+variables:
+  - group: github-packages
+
+pool:
+  name: "Nota OnPremise Agents"
+
+stages:
+  - stage: Build
+    jobs:
+    - job: Build
+      displayName: Build
+      variables:
+        - name: solution
+          value: "Nota.CodeAnalysis.sln"
+        - name: buildPlatform
+          value: "Any CPU"
+        - name: buildConfiguration
+          value: "Release"
+      steps:
+        - task: UseDotNet@2
+          displayName: 'Install .NET Core SDK'
+          inputs:
+            version: 8.x
+        - task: DownloadSecureFile@1
+          name: "nuget"
+          displayName: "Download NuGet.config from secure storage"
+          inputs:
+            secureFile: "NuGet.config"
+        - task: DotNetCoreCLI@2
+          displayName: Nuget restore solution
+          inputs:
+            command: "restore"
+            restoreSolution: "$(solution)"
+            feedsToUse: "config"
+            nugetConfigPath: $(nuget.secureFilePath)
+        - task: DotNetCoreCLI@2
+          displayName: 'Build'
+          inputs:
+            command: 'build'
+            arguments: '--configuration $(buildConfiguration)'
+            projects: "$(solution)"
+        - task: BuildQualityChecks@7
+          displayName: Check warnings
+          inputs:
+            checkWarnings: true
+            warningFailOption: 'fixed'
+            warningThreshold: '1'
+            showStatistics: true
+        - task: DotNetCoreCLI@2
+          displayName: "Generate Nuget package"
+          inputs:
+            command: 'pack'
+            arguments: '--configuration $(buildConfiguration)'
+            packagesToPack: "$(solution)"
+            nobuild: true
+            versioningScheme: 'off'
+        - task: DotNetCoreCLI@2
+          displayName: Publish nuget packages
+          inputs:
+            command: 'custom'
+            custom: 'nuget'
+            arguments: 'push "$(Build.ArtifactStagingDirectory)/**/*.nupkg" --source https://nuget.pkg.github.com/Notalib/index.json --skip-duplicate --api-key "$(github_token)"'
