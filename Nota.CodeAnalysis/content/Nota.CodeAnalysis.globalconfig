@@ -515,6 +515,7 @@ dotnet_diagnostic.SA1117.severity = none
 dotnet_diagnostic.SA1118.severity = warning
 dotnet_diagnostic.SA1119.severity = none
 dotnet_diagnostic.SA1121.severity = none
+dotnet_diagnostic.SA1124.severity = none
 dotnet_diagnostic.SA1127.severity = none
 dotnet_diagnostic.SA1201.severity = none
 dotnet_diagnostic.SA1202.severity = none
