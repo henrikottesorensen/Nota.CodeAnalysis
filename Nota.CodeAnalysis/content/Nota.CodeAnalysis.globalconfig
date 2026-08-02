@@ -23,13 +23,20 @@ dotnet_separate_import_directive_groups = true
 # and dotnet_separate_import_directive_groups groups by first-level namespace with no notion of whose
 # code it is.
 #
-# first_party_prefixes cannot be set here - it differs per solution. A consuming repository sets it
-# in its own .editorconfig:
+# Defaulted to Nota, because that is what nearly every consumer's own code is called, and a setting
+# every repository has to remember is a setting most repositories will not have. A consumer whose
+# code is called something else overrides it in their own .editorconfig:
 #
-#     usinglayout.first_party_prefixes = Contoso
+#     [*.cs]
+#     usinglayout.first_party_prefixes = Contoso, Fabrikam
 #
-# Left unset the scheme degrades to System, then everything else by vendor, which is still stricter
-# than anything on offer by default.
+# That does take precedence - verified against the built package, not assumed: an .editorconfig entry
+# beats a global analyzer config entry for the same key. The same is true of every severity here, so
+# nothing in this file is a decision a consumer is stuck with.
+#
+# A repository that gets this wrong still gets a sensible layout - its own namespaces are simply
+# treated as one more vendor - which is why it is worth defaulting rather than demanding.
+usinglayout.first_party_prefixes = Nota
 usinglayout.separate_roots = true
 
 ## naming rules

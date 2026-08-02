@@ -38,19 +38,20 @@ Four analyser packages come as dependencies: StyleCop.Analyzers, Microsoft.Visua
 SerilogAnalyzer, and UsingLayoutAnalyser. Around 400 rule severities are set in
 `content/Nota.CodeAnalysis.globalconfig`.
 
-## What you have to configure yourself
+## Configuring it
 
-One key, and only one. UsingLayoutAnalyser sorts usings into System, then third party, then *your*
-namespaces - and it cannot know what yours are called. Put this in the consuming repository's
-`.editorconfig`:
+Nothing is required. The one setting most likely to need changing is which namespaces count as
+*yours*, for the using layout - it defaults to `Nota`, which is right for almost everything here.
+
+If your code is called something else, say so in your own `.editorconfig`:
 
 ```ini
 [*.cs]
-usinglayout.first_party_prefixes = Nota
+usinglayout.first_party_prefixes = Contoso, Fabrikam
 ```
 
-Comma-separated for several roots. Left unset the scheme degrades to System-then-everything-else,
-which still works but stops telling your code apart from a vendor's.
+Comma-separated for several roots. Getting it wrong is not fatal - your namespaces are simply sorted
+as one more vendor rather than last.
 
 ## Rules worth knowing before your first build
 
@@ -69,8 +70,9 @@ Most of this is unsurprising. These are the ones that catch people out:
 
 ## Turning things off
 
-Any rule can be overridden in the consuming repository's own `.editorconfig`, which takes precedence
-over this package's global config:
+Any rule can be overridden in the consuming repository's own `.editorconfig`. An `.editorconfig`
+entry beats a global analyzer config entry for the same key, so nothing this package sets is a
+decision you are stuck with:
 
 ```ini
 dotnet_diagnostic.IDE0008.severity = suggestion
