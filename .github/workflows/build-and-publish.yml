@@ -50,6 +50,13 @@ jobs:
       - name: Verify source encoding
         run: ./Nota.CodeAnalysis.Verification/verify-encoding.sh
 
+      # The two checks above run inside the solution and cannot see whether the package delivers
+      # anything. This one packs, installs into a throwaway project, and compiles a file that breaks
+      # a rule from each analyser. It is the only check that fails when a package installs cleanly
+      # and does nothing, which has happened twice.
+      - name: Verify the package delivers the rules
+        run: ./Nota.CodeAnalysis.Verification/verify-package.sh
+
       - name: Pack
         run: dotnet pack Nota.CodeAnalysis.sln --configuration Release --no-build --output artifacts
 

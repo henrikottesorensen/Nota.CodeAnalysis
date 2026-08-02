@@ -22,10 +22,11 @@ fails if any of them stayed quiet.
 ```sh
 ./verify.sh            # the rules report
 ./verify-encoding.sh   # source files are valid UTF-8
+./verify-package.sh    # the rules survive being packaged
 ```
 
-Both run in the pipeline, on pull requests as well as on `main`. Both exit non-zero on failure and
-name what went wrong.
+All three run in the pipeline, on pull requests as well as on `main`. All exit non-zero on failure
+and name what went wrong.
 
 ## How it is put together
 
@@ -81,14 +82,30 @@ Break it in `Samples/Broken.cs`, then add its id to `expected` in `verify.sh`.
 `verify.sh`; it should fail naming that rule. A check nobody has seen fail is not a check - which is
 the whole reason this project exists.
 
-## What it does not cover
+## What `verify-package.sh` asserts
 
-It exercises the globalconfig's *content*, not the *package*. It imports the globalconfig directly
-and declares the analyser references itself, rather than installing the built `.nupkg`. So a wrong
-`PackagePath`, a renamed `build/Nota.CodeAnalysis.props`, or a props file that never gets imported
-would all ship a package that installs cleanly and does nothing - the same failure shape as CS8019,
-one level up. Closing that means packing, installing from a local feed into a throwaway project, and
-asserting there.
+That the rules survive packaging, which the other two cannot see. They run inside the solution, where
+the globalconfig is imported directly and the analysers are referenced by the project itself - so a
+rule can be reported here while no consumer receives it. That is not theoretical; it has happened
+twice:
 
-Both scripts are POSIX `sh` and assume a bash-capable agent (`Bash@3` in the pipeline). On Windows
-agents they need porting to PowerShell.
+- **UsingLayoutAnalyser was built against a newer Roslyn than the SDK running it.** The compiler
+  answered `CS9057`, a warning, and skipped the analyser. Green build, no using rules.
+- **The threading analyser acquired `PrivateAssets` during a version bump**, which stops a reference
+  reaching consumers. `VSTHRD100` went on firing inside this solution while consumers got nothing.
+
+So it packs, installs into a throwaway project from a local feed, and compiles a file that breaks one
+rule per analyser - plus a deliberately mis-encoded file for `NOTA0001`, which proves
+`build/Nota.CodeAnalysis.targets` was packed and imported. It fails on `CS9057` too, since that is a
+warning nothing else would notice.
+
+It packs under a throwaway version like `0.0.0-verify.20260802143000`. That is not cosmetic: NuGet
+extracts a package once per version into the global cache, so re-packing `2.2.0` and installing
+`2.2.0` gets whatever was extracted first, and the change under test never reaches the consumer. This
+script passed cleanly against a regression it was written to catch until the version was made unique.
+
+## What none of them cover
+
+The scripts are POSIX `sh` and run on `ubuntu-latest`. On a Windows agent they would need porting.
+
+`verify-package.sh` needs network on a cold cache, for the throwaway project's own dependencies.
