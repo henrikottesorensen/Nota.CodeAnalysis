@@ -1,0 +1,73 @@
+# Builds, verifies, and publishes to GitHub Packages.
+#
+# Verification is the point rather than a formality. What this repository ships is configuration, and
+# configuration fails silently: a rule that cannot report looks exactly like a rule being obeyed,
+# because the build is quiet either way. Both scripts below exist to make that noisy, and they run on
+# pull requests as well as on main, because a rule that stopped reporting should not be discovered
+# after it has merged.
+name: build and publish
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Only main publishes. A pull request builds and verifies and stops there.
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          # 10, not 8. An analyser cannot reference a newer Roslyn than the compiler running it, and
+          # UsingLayoutAnalyser is the rule set most likely to be affected: on SDK 8 it answers
+          # CS9057 - a warning - and its rules are then silently absent. This is also what consumers
+          # build with, and testing on what people use beats testing on the oldest thing that works.
+          dotnet-version: '10.x'
+
+      # No NuGet.config and no secure file: every dependency is public on nuget.org. The Azure
+      # pipeline this replaced downloaded a secure NuGet.config it did not need.
+      - name: Build
+        run: dotnet build Nota.CodeAnalysis.sln --configuration Release
+
+      - name: Verify the rules report
+        run: ./Nota.CodeAnalysis.Verification/verify.sh
+
+      - name: Verify source encoding
+        run: ./Nota.CodeAnalysis.Verification/verify-encoding.sh
+
+      - name: Pack
+        run: dotnet pack Nota.CodeAnalysis.sln --configuration Release --no-build --output artifacts
+
+      # Kept even on a pull request, so a packaging mistake is visible without merging.
+      - name: Upload the package
+        uses: actions/upload-artifact@v7
+        with:
+          name: nupkg
+          path: artifacts/*.nupkg
+
+      # GITHUB_TOKEN rather than a personal access token: publishing to this repository's own package
+      # registry needs nothing else, which is the whole reason to be here rather than in Azure.
+      # --skip-duplicate so a rerun is not an error - the version comes from the csproj, and pushing
+      # the same one twice is a mistake worth ignoring rather than failing on.
+      - name: Publish to GitHub Packages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: >
+          dotnet nuget push artifacts/*.nupkg
+          --source https://nuget.pkg.github.com/Notalib/index.json
+          --api-key ${{ secrets.GITHUB_TOKEN }}
+          --skip-duplicate

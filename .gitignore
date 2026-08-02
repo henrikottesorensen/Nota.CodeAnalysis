@@ -7,3 +7,6 @@ bin
 
 # Rider / IntelliJ project metadata.
 .idea/
+
+# Local pack output.
+artifacts/
