@@ -26,6 +26,13 @@
   </ItemGroup>
 
   <!--
+    The encoding guard the package ships, imported the way a consumer gets it. NOTA0001 is a build
+    error rather than an analyser diagnostic, so it is the one rule here that cannot be proven by
+    reading a severity out of the globalconfig - it has to actually run.
+  -->
+  <Import Project="../Nota.CodeAnalysis/build/Nota.CodeAnalysis.targets" />
+
+  <!--
     The samples break the rules deliberately, and some of those rules are error severity - IDE0008 is
     - so compiling them would fail any ordinary build of the solution, including the one the pipeline
     runs before it gets here. They are compiled only when verify.sh asks for them, which is the only

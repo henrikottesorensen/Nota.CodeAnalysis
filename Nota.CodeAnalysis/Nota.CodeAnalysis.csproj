@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <None Include="build/Nota.CodeAnalysis.props" Pack="true" PackagePath="/build" />
+    <None Include="build/Nota.CodeAnalysis.targets" Pack="true" PackagePath="/build" />
     <None Include="content/Nota.CodeAnalysis.globalconfig" Pack="true" PackagePath="/content" />
     <None Include="../README.md" Pack="true" PackagePath="/content" />
   </ItemGroup>

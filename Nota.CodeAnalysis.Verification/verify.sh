@@ -28,12 +28,15 @@ done
 # 2. Broken.cs breaks each of these on purpose. A rule that stops reporting is a rule that has been
 #    switched off, renamed, or - as with CS8019 - never worked.
 #
-#    IDE0005 unused using directive          the one CS8019 was supposed to cover
-#    IDE0008  var instead of an explicit type
-#    UA1000   using directives out of order   UsingLayoutAnalyser
-#    SA1208   System usings not placed first
-#    SA1516   no blank line after the System group
-expected=(IDE0005 IDE0008 UA1000 SA1208 SA1516)
+#    IDE0005   unused using directive          the one CS8019 was supposed to cover
+#    IDE0008   var instead of an explicit type
+#    UA1000    using directives out of order   UsingLayoutAnalyser
+#    SA1208    System usings not placed first
+#    SA1516    no blank line after the System group
+#    NOTA0001  a source file that is not valid UTF-8, from build/Nota.CodeAnalysis.targets - the one
+#              rule here that is a build error rather than an analyser diagnostic, and so the only
+#              one that cannot be confirmed by reading a severity out of the globalconfig
+expected=(IDE0005 IDE0008 UA1000 SA1208 SA1516 NOTA0001)
 
 # VerifyRules is what pulls Samples/ into the compilation. Without it the project builds empty, which
 # is what every other build of this solution wants.

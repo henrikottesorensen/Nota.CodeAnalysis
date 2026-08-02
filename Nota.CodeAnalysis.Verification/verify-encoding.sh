@@ -23,6 +23,10 @@
 #
 # POSIX sh and BSD-safe, so it runs on a developer's Mac and in a Linux build container alike.
 #
+# The verification samples are excluded. They are wrong on purpose - one of them is Windows-1252, so
+# that NOTA0001 has something to fire on - and this check exists to find files that are wrong by
+# accident.
+#
 # Paths are passed to a child shell by find rather than through a variable and a for loop. That is
 # not fussiness: word splitting on an unquoted expansion breaks every path containing a space, and
 # reports each half as unreadable - which looks exactly like a corrupt file, in a whole directory of
@@ -35,6 +39,7 @@ root="${1:-.}"
 found="$(find "$root" \
     \( -name '*.cs' -o -name '*.csproj' -o -name '*.json' -o -name '*.resx' -o -name '*.md' -o -name '*.props' -o -name '*.targets' \) \
     -not -path '*/obj/*' -not -path '*/bin/*' -not -path '*/.git/*' \
+    -not -path '*/Nota.CodeAnalysis.Verification/Samples/*' \
     -exec sh -c '
         for f do
             bom=$(head -c 3 "$f" | xxd -p)
