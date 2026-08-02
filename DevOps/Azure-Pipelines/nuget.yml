@@ -26,10 +26,14 @@ stages:
         - name: buildConfiguration
           value: "Release"
       steps:
+        # .NET 10, not 8. An analyser cannot reference a newer Roslyn than the compiler running it:
+        # UsingLayoutAnalyser is built against 4.14, SDK 8 runs 4.11, and the result is CS9057 - a
+        # warning, not an error - with UA1000 and UA1001 silently absent. Verified on 8.0.423, where
+        # StyleCop still reported and the using rules did not.
         - task: UseDotNet@2
-          displayName: 'Install .NET Core SDK'
+          displayName: 'Install .NET SDK'
           inputs:
-            version: 8.x
+            version: 10.x
         - task: DownloadSecureFile@1
           name: "nuget"
           displayName: "Download NuGet.config from secure storage"

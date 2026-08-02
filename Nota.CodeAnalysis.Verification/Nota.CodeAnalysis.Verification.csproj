@@ -7,7 +7,9 @@
     years asking for unused usings to be reported, and reported nothing. Nothing would have noticed.
   -->
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- net10.0, so this stands in for what consumers actually build on. On net8.0 it would still
+         pass while proving less: SDK 8's Roslyn is too old to load UsingLayoutAnalyser at all. -->
+    <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
 
     <!-- The rules must report, not stop the build - verify.sh reads the warnings. -->
