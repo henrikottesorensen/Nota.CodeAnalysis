@@ -1,5 +1,5 @@
 is_global = true
-charset = utf-8-bom
+charset = utf-8
 indent_style = space
 indent_size = 4
 tab_width = 4
@@ -557,7 +557,15 @@ dotnet_diagnostic.SA1309.severity = none
 dotnet_diagnostic.SA1310.severity = warning
 dotnet_diagnostic.SA1401.severity = warning
 dotnet_diagnostic.SA1402.severity = suggestion
-dotnet_diagnostic.SA1412.severity = warning
+# Off: source is UTF-8 without a BOM. SA1412 is the only thing that was requiring one, and it does
+# not read charset at all - it demands a BOM whether charset says utf-8 or utf-8-bom, which is why
+# turning it off is the change and editing charset is not.
+#
+# Nothing enforces the other direction. No analyser reports a BOM that should not be there, and
+# charset below reaches no editor: this file arrives through MSBuild as a global analyzer config,
+# and editors read .editorconfig from disk. A repository that wants the absence of a BOM enforced
+# needs its own .editorconfig, or a check outside the compiler.
+dotnet_diagnostic.SA1412.severity = none
 dotnet_diagnostic.SA1413.severity = warning
 dotnet_diagnostic.SA1600.severity = none
 dotnet_diagnostic.SA1601.severity = none

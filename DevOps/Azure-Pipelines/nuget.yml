@@ -55,6 +55,13 @@ stages:
           inputs:
             filePath: "Nota.CodeAnalysis.Verification/verify.sh"
 
+        # The encoding guard that replaces SA1412. Nothing in the compiler covers this: a file saved
+        # as Windows-1252 builds clean and reaches the assembly as U+FFFD.
+        - task: Bash@3
+          displayName: "Verify source encoding"
+          inputs:
+            filePath: "Nota.CodeAnalysis.Verification/verify-encoding.sh"
+
         - task: DotNetCoreCLI@2
           displayName: "Generate Nuget package"
           # Only main publishes. Without this a pull request build would push a package.

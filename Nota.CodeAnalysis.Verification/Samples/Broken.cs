@@ -1,4 +1,4 @@
-﻿using Nota.Vendor;
+using Nota.Vendor;
 using System;
 using System.Xml;
 
