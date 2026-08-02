@@ -1,6 +1,11 @@
 trigger:
   - main
-pr: none
+
+# Pull requests build now. They did not, and the only thing this repository ships is configuration -
+# so a change that silently stopped a rule from reporting could not be caught by anything before it
+# merged. The verification step below is what makes building a pull request worth anything.
+pr:
+  - main
 
 variables:
   - group: github-packages
@@ -43,8 +48,17 @@ stages:
             command: 'build'
             arguments: '--configuration $(buildConfiguration)'
             projects: "$(solution)"
+        # The rules are asserted to actually report, against a project that breaks them on purpose.
+        # Assumes a bash-capable agent; swap for PowerShell@2 if these are Windows agents.
+        - task: Bash@3
+          displayName: "Verify the rules report"
+          inputs:
+            filePath: "Nota.CodeAnalysis.Verification/verify.sh"
+
         - task: DotNetCoreCLI@2
           displayName: "Generate Nuget package"
+          # Only main publishes. Without this a pull request build would push a package.
+          condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
           inputs:
             command: 'pack'
             arguments: '--configuration $(buildConfiguration)'
@@ -53,6 +67,7 @@ stages:
             versioningScheme: 'off'
         - task: DotNetCoreCLI@2
           displayName: Publish nuget packages
+          condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
           inputs:
             command: 'custom'
             custom: 'nuget'

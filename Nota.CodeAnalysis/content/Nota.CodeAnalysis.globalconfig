@@ -8,7 +8,29 @@ end_of_line = crlf
 # Stylecop settings
 ## Using Directives
 dotnet_sort_system_directives_first = true
+
+# Half of this is enforced and half is not, so do not read it as a promise. SA1516 uses it to require
+# the blank line after the System group, and that part works. The per-vendor grouping the name
+# suggests - Microsoft together, Serilog together - is checked by IDE0055 only, which is off here, so
+# nothing reports it. UsingLayoutAnalyser below is what actually enforces the grouping; this stays
+# for the System boundary, and because turning it off would silence that too.
 dotnet_separate_import_directive_groups = true
+
+## Using layout - UsingLayoutAnalyser (UA1000, UA1001)
+# System, then third party, then the consuming solution's own namespaces, as blocks separated by a
+# blank line, each sorted alphabetically, and one run per vendor inside a block. Neither StyleCop nor
+# the built-in options can express that: SA1208/SA1210 know only "System first, then alphabetical",
+# and dotnet_separate_import_directive_groups groups by first-level namespace with no notion of whose
+# code it is.
+#
+# first_party_prefixes cannot be set here - it differs per solution. A consuming repository sets it
+# in its own .editorconfig:
+#
+#     usinglayout.first_party_prefixes = Contoso
+#
+# Left unset the scheme degrades to System, then everything else by vendor, which is still stricter
+# than anything on offer by default.
+usinglayout.separate_roots = true
 
 ## naming rules
 stylecop.naming.tupleElementNameCasing = camelCase
@@ -497,7 +519,12 @@ dotnet_diagnostic.CA5405.severity = warning
 dotnet_diagnostic.CS0649.severity = warning
 dotnet_diagnostic.CS1574.severity = warning
 dotnet_diagnostic.CS1591.severity = none
+# Inert, and kept only so nobody sets it again expecting an effect. CS8019 is emitted hidden by the
+# compiler and a severity here does not raise it: with this line and nothing else, a file with an
+# unused using builds clean. Measured, not assumed. IDE0005 below is the rule that reports, and it
+# needs GenerateDocumentationFile, which build/Nota.CodeAnalysis.props already sets.
 dotnet_diagnostic.CS8019.severity = warning
+dotnet_diagnostic.IDE0005.severity = warning
 dotnet_diagnostic.IDE0008.severity = error
 dotnet_diagnostic.IDE0016.severity = none
 dotnet_diagnostic.IDE0016WithoutSuggestion.severity = none
@@ -520,7 +547,12 @@ dotnet_diagnostic.SA1127.severity = none
 dotnet_diagnostic.SA1201.severity = none
 dotnet_diagnostic.SA1202.severity = none
 dotnet_diagnostic.SA1204.severity = warning
-dotnet_diagnostic.SA1210.severity = warning
+# Off, and it cannot be anything else while UA1000 owns the ordering. SA1210 sorts the whole list
+# alphabetically end to end, so it wants a solution's own root above a vendor whenever it sorts
+# earlier - Contoso above Microsoft - which is exactly what the layout moves to the bottom. Every
+# laid-out file would be an SA1210 warning. SA1208, SA1209, SA1211, SA1216 and SA1217 do not conflict
+# and stay on.
+dotnet_diagnostic.SA1210.severity = none
 dotnet_diagnostic.SA1309.severity = none
 dotnet_diagnostic.SA1310.severity = warning
 dotnet_diagnostic.SA1401.severity = warning
