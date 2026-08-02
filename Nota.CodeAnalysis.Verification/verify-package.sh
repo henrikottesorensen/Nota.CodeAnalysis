@@ -4,7 +4,7 @@
 #
 # verify.sh proves the globalconfig's content: it imports that file directly and declares the
 # analyser references itself, standing in for a consumer. That is not the same as being one, and the
-# difference has now cost this repository twice.
+# difference has already mattered twice, both times in changes that had not yet merged.
 #
 #   - UsingLayoutAnalyser was built against a Roslyn newer than the SDK running it. The compiler
 #     answered CS9057, a warning, and skipped the analyser. Green build, no rules.

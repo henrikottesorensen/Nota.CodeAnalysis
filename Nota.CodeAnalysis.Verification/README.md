@@ -86,8 +86,8 @@ the whole reason this project exists.
 
 That the rules survive packaging, which the other two cannot see. They run inside the solution, where
 the globalconfig is imported directly and the analysers are referenced by the project itself - so a
-rule can be reported here while no consumer receives it. That is not theoretical; it has happened
-twice:
+rule can be reported here while no consumer receives it. That is not theoretical - it happened twice
+while this project was being written, both times caught before merging:
 
 - **UsingLayoutAnalyser was built against a newer Roslyn than the SDK running it.** The compiler
   answered `CS9057`, a warning, and skipped the analyser. Green build, no using rules.
