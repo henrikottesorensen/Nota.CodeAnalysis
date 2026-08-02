@@ -102,5 +102,14 @@ before changing rules.
 
 Both run on pull requests as well as on `main`.
 
-Releases are cut by bumping `<Version>` in `Nota.CodeAnalysis/Nota.CodeAnalysis.csproj` and merging
-to `main`; the pipeline packs and pushes. Pull request builds verify but never publish.
+Releases are cut by tagging:
+
+```sh
+git tag -a v2.3.0 -m "Nota.CodeAnalysis 2.3.0" && git push origin v2.3.0
+```
+
+The tag is the version, so nothing in the repository can disagree with what shipped. `<Version>` in
+the csproj is only a local default, for anyone packing by hand.
+
+Merging to `main` builds and verifies but does not publish, and neither do pull requests - releasing
+is a separate act from merging.

@@ -10,11 +10,13 @@ name: build and publish
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
 
-# Only main publishes. A pull request builds and verifies and stops there.
+# Only a version tag publishes. Pushes to main and pull requests build and verify and stop there,
+# so merging is not the same act as releasing.
 permissions:
   contents: read
   packages: write
@@ -39,10 +41,17 @@ jobs:
           # build with, and testing on what people use beats testing on the oldest thing that works.
           dotnet-version: '10.x'
 
+      # On a tag the tag is the version, so nothing in the repository can disagree with what shipped.
+      # Off a tag this is unset and expands to nothing, leaving the csproj's own <Version> - which is
+      # then only ever a local default, never the thing that gets published.
+      - name: Take the version from the tag
+        if: github.ref_type == 'tag'
+        run: echo "VERSION_ARG=-p:Version=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
       # No NuGet.config and no secure file: every dependency is public on nuget.org. The Azure
       # pipeline this replaced downloaded a secure NuGet.config it did not need.
       - name: Build
-        run: dotnet build Nota.CodeAnalysis.sln --configuration Release
+        run: dotnet build Nota.CodeAnalysis.sln --configuration Release $VERSION_ARG
 
       - name: Verify the rules report
         run: ./Nota.CodeAnalysis.Verification/verify.sh
@@ -58,7 +67,7 @@ jobs:
         run: ./Nota.CodeAnalysis.Verification/verify-package.sh
 
       - name: Pack
-        run: dotnet pack Nota.CodeAnalysis.sln --configuration Release --no-build --output artifacts
+        run: dotnet pack Nota.CodeAnalysis.sln --configuration Release --no-build --output artifacts $VERSION_ARG
 
       # Kept even on a pull request, so a packaging mistake is visible without merging.
       - name: Upload the package
@@ -69,10 +78,10 @@ jobs:
 
       # GITHUB_TOKEN rather than a personal access token: publishing to this repository's own package
       # registry needs nothing else, which is the whole reason to be here rather than in Azure.
-      # --skip-duplicate so a rerun is not an error - the version comes from the csproj, and pushing
-      # the same one twice is a mistake worth ignoring rather than failing on.
+      # --skip-duplicate so re-running a failed job is not itself an error; the registry keeps a
+      # version forever, and pushing the same one twice is worth ignoring rather than failing on.
       - name: Publish to GitHub Packages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.ref_type == 'tag'
         run: >
           dotnet nuget push artifacts/*.nupkg
           --source https://nuget.pkg.github.com/Notalib/index.json
