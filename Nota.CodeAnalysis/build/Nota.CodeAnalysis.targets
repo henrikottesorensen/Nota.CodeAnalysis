@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!--
+    Fails the build on a source file that is not valid UTF-8.
+
+    Nothing else can do this. A file saved as Windows-1252 compiles with no warning and no error, and
+    the compiler writes U+FFFD replacement characters into the assembly - measured, not assumed. An
+    analyser cannot report it, because by the time an analyser runs the text has already been decoded
+    and the original bytes are gone. So it happens here, before CoreCompile, where the bytes still
+    exist.
+
+    This replaces SA1412. That rule demanded a byte order mark, which was never the point and was
+    wrongly believed to be needed for container builds - but it was, by accident, the only thing
+    standing between a build and a mis-encoded file. Removing it without this would have left every
+    consumer worse off than before.
+
+    Set NotaValidateSourceEncoding to false to switch it off.
+  -->
+
+  <PropertyGroup>
+    <NotaValidateSourceEncoding Condition="'$(NotaValidateSourceEncoding)' == ''">true</NotaValidateSourceEncoding>
+  </PropertyGroup>
+
+  <UsingTask TaskName="NotaValidateUtf8" TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll"
+             Condition="'$(NotaValidateSourceEncoding)' == 'true'">
+    <ParameterGroup>
+      <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        foreach (var item in Files)
+        {
+            var path = item.GetMetadata("FullPath");
+
+            if (!System.IO.File.Exists(path))
+            {
+                continue;
+            }
+
+            var bytes = System.IO.File.ReadAllBytes(path);
+
+            // UTF-16 carrying a BOM is fine: the compiler reads it correctly, and svcutil and EF
+            // migrations emit it. Such a file must keep its BOM - it is the only record of the
+            // encoding, and stripping it destroys the file.
+            if (bytes.Length >= 2
+                && ((bytes[0] == 0xFF && bytes[1] == 0xFE) || (bytes[0] == 0xFE && bytes[1] == 0xFF)))
+            {
+                continue;
+            }
+
+            try
+            {
+                new System.Text.UTF8Encoding(false, true).GetString(bytes);
+            }
+            catch (System.Text.DecoderFallbackException)
+            {
+                Log.LogError(
+                    null,
+                    "NOTA0001",
+                    null,
+                    path,
+                    1,
+                    1,
+                    0,
+                    0,
+                    "File is not valid UTF-8. It will compile without complaint and reach the assembly as U+FFFD replacement characters. Re-save it as UTF-8, and check the tool or editor that last wrote it.");
+            }
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <!--
+    Before CoreCompile rather than after, so a mis-encoded file is reported instead of silently
+    compiled. Only the files being compiled are read; .resx and .json are not covered, and a check
+    that reads every file in the tree on every build was not worth the time it costs.
+  -->
+  <Target Name="NotaValidateSourceEncoding"
+          BeforeTargets="CoreCompile"
+          Condition="'$(NotaValidateSourceEncoding)' == 'true' AND '@(Compile)' != ''">
+    <NotaValidateUtf8 Files="@(Compile)" />
+  </Target>
+
+</Project>

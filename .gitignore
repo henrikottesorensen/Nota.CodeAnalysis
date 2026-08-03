@@ -1,3 +1,12 @@
 ﻿.vs
 obj
 bin
+
+# macOS Finder metadata.
+.DS_Store
+
+# Rider / IntelliJ project metadata.
+.idea/
+
+# Local pack output.
+artifacts/

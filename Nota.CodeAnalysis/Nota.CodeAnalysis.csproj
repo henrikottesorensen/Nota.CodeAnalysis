@@ -4,18 +4,32 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/Notalib/Nota.CodeAnalysis</RepositoryUrl>
     <NoDefaultExcludes>true</NoDefaultExcludes>
-    <Version>2.1.4</Version>
+    <!-- A local default only. Releases take their version from the git tag, so this is what you get
+         packing by hand and never what gets published. -->
+    <Version>2.2.0</Version>
     <PackageReadmeFile>content/README.md</PackageReadmeFile>
   </PropertyGroup>
 
+  <!--
+    None of these carry PrivateAssets, and none of them may. This package exists to hand its rules
+    on: PrivateAssets stops a reference flowing to consumers, which for an analyser means the rules
+    never arrive. The globalconfig would still set their severities, and nothing would ever report -
+    the same silent failure as a rule that does not exist.
+
+    Rider adds PrivateAssets automatically when it upgrades an analyser reference. That is right for
+    an ordinary project and wrong here; it happened once already and cost VSTHRD100, which this
+    package declares an error and consumers were not receiving at all.
+  -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.11.20" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
     <PackageReference Include="SerilogAnalyzer" Version="0.15.0" />
     <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.556" />
+    <PackageReference Include="UsingLayoutAnalyser" Version="0.2.1" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="build/Nota.CodeAnalysis.props" Pack="true" PackagePath="/build" />
+    <None Include="build/Nota.CodeAnalysis.targets" Pack="true" PackagePath="/build" />
     <None Include="content/Nota.CodeAnalysis.globalconfig" Pack="true" PackagePath="/content" />
     <None Include="../README.md" Pack="true" PackagePath="/content" />
   </ItemGroup>

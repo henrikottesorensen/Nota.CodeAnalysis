@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Not a unit test project. It is a consumer of the rules, built on purpose against files that break
+    them, so that verify.sh can assert each rule actually reported. The product of this repository is
+    configuration, and configuration fails silently: dotnet_diagnostic.CS8019.severity sat here for
+    years asking for unused usings to be reported, and reported nothing. Nothing would have noticed.
+  -->
+  <PropertyGroup>
+    <!-- net10.0, so this stands in for what consumers actually build on. On net8.0 it would still
+         pass while proving less: SDK 8's Roslyn is too old to load UsingLayoutAnalyser at all. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+
+    <!-- The rules must report, not stop the build - verify.sh reads the warnings. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+    <!-- What build/Nota.CodeAnalysis.props gives a consumer. Kept in step with it by verify.sh, which
+         fails if a property here is missing from the props file. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <GlobalAnalyzerConfigFiles Include="../Nota.CodeAnalysis/content/Nota.CodeAnalysis.globalconfig" />
+  </ItemGroup>
+
+  <!--
+    The encoding guard the package ships, imported the way a consumer gets it. NOTA0001 is a build
+    error rather than an analyser diagnostic, so it is the one rule here that cannot be proven by
+    reading a severity out of the globalconfig - it has to actually run.
+  -->
+  <Import Project="../Nota.CodeAnalysis/build/Nota.CodeAnalysis.targets" />
+
+  <!--
+    The samples break the rules deliberately, and some of those rules are error severity - IDE0008 is
+    - so compiling them would fail any ordinary build of the solution, including the one the pipeline
+    runs before it gets here. They are compiled only when verify.sh asks for them, which is the only
+    time anyone wants a project that does not build.
+  -->
+  <ItemGroup>
+    <Compile Remove="Samples/**" />
+    <Compile Include="Samples/**" Condition="'$(VerifyRules)' == 'true'" />
+    <None Include="Samples/**" Condition="'$(VerifyRules)' != 'true'" />
+    <None Include="verify.sh" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
+    <PackageReference Include="SerilogAnalyzer" Version="0.15.0" />
+    <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.556" />
+    <PackageReference Include="UsingLayoutAnalyser" Version="0.2.1" />
+  </ItemGroup>
+
+</Project>
