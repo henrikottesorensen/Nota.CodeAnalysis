@@ -109,8 +109,16 @@ git diff --numstat | awk '$1 != 1 || $2 != 1'
 
 Silence means nothing but marks moved.
 
+Two things in that order, and both bite if you get them wrong.
+
 **Take 2.2 first.** On 2.1.x `SA1412` still demands a mark, so stripping them before upgrading breaks
 the build on every file.
+
+**Then close the IDE while you strip them.** Visual Studio and Rider decide a file's encoding when
+they open it and keep that decision for the buffer. A file that was opened with a mark gets one
+written back on the next save, whatever the file on disk now looks like - so an editor left running
+quietly undoes the script, file by file, as you touch them. Closing it and reopening afterwards is
+enough; the encoding is re-detected from what is actually there.
 
 ## Working on this repository
 
