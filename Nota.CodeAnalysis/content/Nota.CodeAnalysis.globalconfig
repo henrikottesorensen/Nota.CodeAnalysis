@@ -23,9 +23,11 @@ dotnet_separate_import_directive_groups = true
 # and dotnet_separate_import_directive_groups groups by first-level namespace with no notion of whose
 # code it is.
 #
-# Defaulted to Nota, because that is what nearly every consumer's own code is called, and a setting
-# every repository has to remember is a setting most repositories will not have. A consumer whose
-# code is called something else overrides it in their own .editorconfig:
+# Defaulted to the two roots Nota's own code uses, because a setting every repository has to remember
+# is a setting most repositories will not have. Both are needed: a root only matches at a dot
+# boundary, so Notalib.Something is not covered by "Nota" - the same rule that stops "System"
+# swallowing "SystemsManager". A consumer whose code is called something else overrides it in their
+# own .editorconfig:
 #
 #     [*.cs]
 #     usinglayout.first_party_prefixes = Contoso, Fabrikam
@@ -36,7 +38,7 @@ dotnet_separate_import_directive_groups = true
 #
 # A repository that gets this wrong still gets a sensible layout - its own namespaces are simply
 # treated as one more vendor - which is why it is worth defaulting rather than demanding.
-usinglayout.first_party_prefixes = Nota
+usinglayout.first_party_prefixes = Nota, Notalib
 usinglayout.separate_roots = true
 
 ## naming rules
