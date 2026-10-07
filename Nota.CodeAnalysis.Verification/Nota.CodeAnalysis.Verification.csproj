@@ -54,4 +54,10 @@
     <PackageReference Include="UsingLayoutAnalyser" Version="0.4.0" />
   </ItemGroup>
 
+  <!-- Nota's own analysers, loaded the way the package delivers them: as an analyser, not a library. -->
+  <ItemGroup>
+    <ProjectReference Include="../Nota.CodeAnalysis.Analysers/Nota.CodeAnalysis.Analysers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
 </Project>

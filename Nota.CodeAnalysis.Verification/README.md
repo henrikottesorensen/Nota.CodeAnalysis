@@ -48,16 +48,26 @@ looks redundant and is not: without it `IDE0005` silently stops reporting.
 
 ## What `verify.sh` asserts
 
-`Samples/Broken.cs` and `Samples/Unseparated.cs` break each of these deliberately.
+The files in `Samples/` break each of these deliberately.
 
-| Rule      | What it catches                                  | Sample           |
-|-----------|--------------------------------------------------|------------------|
-| `IDE0005` | an unused using - what CS8019 never did          | `Broken.cs`      |
-| `IDE0008` | `var` instead of an explicit type                | `Broken.cs`      |
-| `UA1000`  | using directives out of order                    | `Broken.cs`      |
-| `SA1208`  | System usings not placed first                   | `Broken.cs`      |
-| `UA1001`  | no blank line between using blocks               | `Unseparated.cs` |
-| `SA1516`  | no blank line between members                    | `Unseparated.cs` |
+| Rule       | What it catches                                  | Sample               |
+|------------|--------------------------------------------------|----------------------|
+| `IDE0005`  | an unused using - what CS8019 never did          | `Broken.cs`          |
+| `IDE0008`  | `var` instead of an explicit type                | `Broken.cs`          |
+| `UA1000`   | using directives out of order                    | `Broken.cs`          |
+| `SA1208`   | System usings not placed first                   | `Broken.cs`          |
+| `UA1001`   | no blank line between using blocks               | `Unseparated.cs`     |
+| `SA1516`   | no blank line between members                    | `Unseparated.cs`     |
+| `NOTA0003` | an operator leading a wrapped line               | `LeadingOperator.cs` |
+
+`LeadingOperator.cs` also wraps the same expression the way `NOTA0003` wants, and `verify.sh` fails if
+anything at all reports on it. That is what its code fix produces, and a fix that some other rule -
+StyleCop's `SA1003`, say, or `IDE0055` - wants undone is a loop rather than a convention. Nothing does
+today; this is what would say so if a StyleCop upgrade changed that.
+
+`NOTA0003` comes from `Nota.CodeAnalysis.Analysers` in this repository, referenced as an analyser
+rather than through the package. Its own behaviour is covered by the unit tests in
+`Nota.CodeAnalysis.Analysers.Test`; this only proves it loads and reports.
 
 Two more come from `build/Nota.CodeAnalysis.targets` rather than an analyser, and so are the only
 rules here that cannot be confirmed by reading a severity out of the globalconfig - they have to
@@ -135,6 +145,9 @@ rule per analyser - plus a deliberately mis-encoded file for `NOTA0001`, which p
 `build/Nota.CodeAnalysis.targets` was packed and imported, and a marked one for `NOTA0002`, which is
 the only rule with an opt-out that defaults to enforcing and so the only one where a wrong default
 would ship as silence. It fails on `CS9057` too, since that is a warning nothing else would notice.
+
+`NOTA0003` proves the package's own analyser assembly was packed under `analyzers/dotnet/cs`, which
+nothing inside the solution can see.
 
 It also asserts the opposite of everything above: that `NOTA0001` and `NOTA0002` report the
 consumer's own files and **nothing else**. The throwaway project references `Microsoft.NET.Test.Sdk`

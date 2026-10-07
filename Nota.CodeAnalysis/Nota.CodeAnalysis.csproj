@@ -29,6 +29,32 @@
     <PackageReference Include="MinVer" Version="7.0.0" PrivateAssets="All" />
   </ItemGroup>
 
+  <!--
+    Nota's own analysers (NOTA0003) and their code fixes, carried in this package rather than as a
+    dependency. ReferenceOutputAssembly="false" because nothing here calls them - the reference only
+    makes them build first - and PrivateAssets so that pack does not turn them into package
+    dependencies that do not exist on any feed. NotaPackAnalysers puts the built assemblies where a
+    consumer's compiler looks for analysers.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../Nota.CodeAnalysis.Analysers/Nota.CodeAnalysis.Analysers.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="../Nota.CodeAnalysis.Analysers.CodeFixes/Nota.CodeAnalysis.Analysers.CodeFixes.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);NotaPackAnalysers</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <Target Name="NotaPackAnalysers">
+    <MSBuild Projects="@(ProjectReference)" Targets="GetTargetPath">
+      <Output TaskParameter="TargetOutputs" ItemName="NotaAnalyserAssembly" />
+    </MSBuild>
+
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="@(NotaAnalyserAssembly)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <None Include="build/Nota.CodeAnalysis.props" Pack="true" PackagePath="/build" />
     <None Include="build/Nota.CodeAnalysis.targets" Pack="true" PackagePath="/build" />

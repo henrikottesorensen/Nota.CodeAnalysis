@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Rules Nota enforces that no published analyser expresses. Shipped inside the Nota.CodeAnalysis
+    package, under analyzers/dotnet/cs, rather than as a package of its own.
+
+    Loaded into the compiler, so it targets netstandard2.0 and references Roslyn 4.8 - the one SDK 8
+    carries. An analyser built against a newer compiler than the one running it is refused with
+    CS9057, a warning, and its rules are then silently absent; UsingLayoutAnalyser pins 4.8 for the
+    same reason.
+
+    Deliberately free of Microsoft.CodeAnalysis.Workspaces: the command-line compiler does not carry
+    it. Code fixes, which need it, are in Nota.CodeAnalysis.Analysers.CodeFixes.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+</Project>

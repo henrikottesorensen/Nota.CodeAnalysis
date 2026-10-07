@@ -54,6 +54,12 @@ jobs:
       - name: Build
         run: dotnet build Nota.CodeAnalysis.sln --configuration Release
 
+      # Unit tests for this repository's own analysers (NOTA0003): what they report, and that the
+      # code fix moves operators without changing anything but whitespace. The scripts below prove
+      # the rule reaches a consumer; these prove it is right when it gets there.
+      - name: Test the analysers
+        run: dotnet test Nota.CodeAnalysis.sln --configuration Release --no-build
+
       - name: Verify the rules report
         run: ./Nota.CodeAnalysis.Verification/verify.sh
 
