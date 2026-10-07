@@ -40,7 +40,9 @@ done
 #    NOTA0001  a source file that is not valid UTF-8, from build/Nota.CodeAnalysis.targets - the one
 #              rule here that is a build error rather than an analyser diagnostic, and so the only
 #              one that cannot be confirmed by reading a severity out of the globalconfig
-expected=(IDE0005 IDE0008 UA1000 UA1001 SA1208 SA1516 NOTA0001)
+#    NOTA0002  an operator leading a wrapped line - see Samples/LeadingOperator.cs. From this
+#              repository's own analyser, so it also proves the analyser project loads at all
+expected=(IDE0005 IDE0008 UA1000 UA1001 SA1208 SA1516 NOTA0001 NOTA0002)
 
 # VerifyRules is what pulls Samples/ into the compilation. Without it the project builds empty, which
 # is what every other build of this solution wants.
@@ -52,6 +54,17 @@ for rule in "${expected[@]}"; do
         failures+=("$rule did not report - it is configured but not reaching consumers")
     fi
 done
+
+# 3. Samples/LeadingOperator.cs wraps the same expression both ways. The leading operator is the one
+#    NOTA0002 reports; the trailing one is what its fix produces, and nothing may report that - not
+#    NOTA0002, and not a StyleCop or formatting rule wanting the operator back where it was. A rule
+#    whose fix another rule reports is a loop, not a convention.
+leading="$(grep 'LeadingOperator\.cs(' <<<"$output" | sed 's/ \[.*//' | sort -u || true)"
+unexpected="$(grep -v 'LeadingOperator\.cs(19,13): warning NOTA0002:' <<<"$leading" || true)"
+
+if [ -n "$unexpected" ]; then
+    failures+=("Samples/LeadingOperator.cs reported more than the one leading operator:"$'\n'"$unexpected")
+fi
 
 if [ ${#failures[@]} -ne 0 ]; then
     printf 'Verification failed:\n' >&2

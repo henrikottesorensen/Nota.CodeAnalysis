@@ -48,16 +48,27 @@ looks redundant and is not: without it `IDE0005` silently stops reporting.
 
 ## What `verify.sh` asserts
 
-`Samples/Broken.cs` and `Samples/Unseparated.cs` break each of these deliberately.
+The files in `Samples/` break each of these deliberately.
 
-| Rule      | What it catches                                  | Sample           |
-|-----------|--------------------------------------------------|------------------|
-| `IDE0005` | an unused using - what CS8019 never did          | `Broken.cs`      |
-| `IDE0008` | `var` instead of an explicit type                | `Broken.cs`      |
-| `UA1000`  | using directives out of order                    | `Broken.cs`      |
-| `SA1208`  | System usings not placed first                   | `Broken.cs`      |
-| `UA1001`  | no blank line between using blocks               | `Unseparated.cs` |
-| `SA1516`  | no blank line between members                    | `Unseparated.cs` |
+| Rule       | What it catches                                  | Sample               |
+|------------|--------------------------------------------------|----------------------|
+| `IDE0005`  | an unused using - what CS8019 never did          | `Broken.cs`          |
+| `IDE0008`  | `var` instead of an explicit type                | `Broken.cs`          |
+| `UA1000`   | using directives out of order                    | `Broken.cs`          |
+| `SA1208`   | System usings not placed first                   | `Broken.cs`          |
+| `UA1001`   | no blank line between using blocks               | `Unseparated.cs`     |
+| `SA1516`   | no blank line between members                    | `Unseparated.cs`     |
+| `NOTA0001` | a source file that is not valid UTF-8            | `Latin1Encoded.cs`   |
+| `NOTA0002` | an operator leading a wrapped line               | `LeadingOperator.cs` |
+
+`LeadingOperator.cs` also wraps the same expression the way `NOTA0002` wants, and `verify.sh` fails if
+anything at all reports on it. That is what its code fix produces, and a fix that some other rule -
+StyleCop's `SA1003`, say, or `IDE0055` - wants undone is a loop rather than a convention. Nothing does
+today; this is what would say so if a StyleCop upgrade changed that.
+
+`NOTA0002` comes from `Nota.CodeAnalysis.Analysers` in this repository, referenced as an analyser
+rather than through the package. Its own behaviour is covered by the unit tests in
+`Nota.CodeAnalysis.Analysers.Test`; this only proves it loads and reports.
 
 `SA1516` used to be the one asserting the blank line after the System group, and that worked only
 because `dotnet_separate_import_directive_groups` was set. The key had to go - at *any* value,
@@ -105,7 +116,8 @@ while this project was being written, both times caught before merging:
 
 So it packs, installs into a throwaway project from a local feed, and compiles a file that breaks one
 rule per analyser - plus a deliberately mis-encoded file for `NOTA0001`, which proves
-`build/Nota.CodeAnalysis.targets` was packed and imported. It fails on `CS9057` too, since that is a
+`build/Nota.CodeAnalysis.targets` was packed and imported. `NOTA0002` proves the package's own
+analyser assembly was packed under `analyzers/dotnet/cs`, which nothing inside the solution can see. It fails on `CS9057` too, since that is a
 warning nothing else would notice.
 
 It packs under a throwaway version like `0.0.0-verify.20260802143000`. That is not cosmetic: NuGet

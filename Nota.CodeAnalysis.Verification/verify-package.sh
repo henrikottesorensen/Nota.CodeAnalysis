@@ -113,6 +113,13 @@ public static class Broken
 
     /// <summary>An unbound property is Serilog003, from SerilogAnalyzer.</summary>
     public static void LogIt() => Log.Information("Hello {Name}");
+
+    /// <summary>A leading operator is NOTA0002, from the package's own analyser.</summary>
+    public static bool Both(bool a, bool b)
+    {
+        return a
+            && b;
+    }
 }
 EOF
 
@@ -138,7 +145,8 @@ output="$(cd "$app" && dotnet build --no-incremental -v:m 2>&1 || true)"
 #   VSTHRD100  Microsoft.VisualStudio.Threading.Analyzers reached the consumer
 #   UA1000     UsingLayoutAnalyser reached the consumer, and loaded on this Roslyn
 #   Serilog003 SerilogAnalyzer reached the consumer
-expected="IDE0008 NOTA0001 SA1208 VSTHRD100 UA1000 Serilog003"
+#   NOTA0002   the package's own analyser was packed under analyzers/dotnet/cs, and loaded on this Roslyn
+expected="IDE0008 NOTA0001 NOTA0002 SA1208 VSTHRD100 UA1000 Serilog003"
 
 missing=""
 for rule in $expected; do

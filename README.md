@@ -35,8 +35,9 @@ Four properties are switched on, in `build/Nota.CodeAnalysis.props`:
 | `ImplicitUsings` | disabled - usings are stated, not inherited |
 
 Four analyser packages come as dependencies: StyleCop.Analyzers, Microsoft.VisualStudio.Threading.Analyzers,
-SerilogAnalyzer, and UsingLayoutAnalyser. Around 400 rule severities are set in
-`content/Nota.CodeAnalysis.globalconfig`.
+SerilogAnalyzer, and UsingLayoutAnalyser. One more, Nota's own (`NOTA0002`, with its code fix), is
+carried inside the package itself, built from `Nota.CodeAnalysis.Analysers`. Around 400 rule
+severities are set in `content/Nota.CodeAnalysis.globalconfig`.
 
 ## Configuring it
 
@@ -64,6 +65,12 @@ Most of this is unsurprising. These are the ones that catch people out:
   no warning at all and reaches the assembly as U+FFFD replacement characters. UTF-16 with a byte
   order mark passes, since the compiler reads it correctly - and such a file must keep its BOM, which
   is the only record of its encoding.
+- **`NOTA0002`**: when an expression wraps, the operator ends the line and the next line starts
+  with the operand - `a &&` then `b`, not `a` then `&& b`. Binary operators, `is`/`as`, the pattern
+  combinators `and`/`or`, and both halves of `?:`; not `.`, `=>`, or the `:` of a base list or
+  constructor initializer. The code fix moves only the operator and leaves the expression alone - a
+  wrapped condition or ternary is fine as it is. An existing repository is converted in one pass
+  with `dotnet format analyzers --diagnostics NOTA0002 --severity warn`.
 - **`UA1000` and `UA1001`** enforce the using layout: System, then third party, then yours, as blocks
   separated by a blank line, one run per vendor. An existing repository is converted in one pass with
   `dotnet format analyzers --diagnostics UA1000 UA1001 --severity warn`.
@@ -91,6 +98,32 @@ The encoding check is a build task rather than a diagnostic, so it has its own s
 
 ```xml
 <NotaValidateSourceEncoding>false</NotaValidateSourceEncoding>
+```
+
+## Upgrading from 2.3
+
+The operator placement convention has flipped. `dotnet_style_operator_placement_when_wrapping` was
+`beginning_of_line` and is now `end_of_line`, and `NOTA0002` reports every operator that still leads
+a wrapped line - as a warning, so a repository with `TreatWarningsAsErrors` will fail to build until
+they are moved. One command moves them all, and changes nothing but whitespace:
+
+```sh
+dotnet format analyzers --diagnostics NOTA0002 --severity warn
+```
+
+`IDE0024` is now a warning too: an operator overload has a block body, not `=>`. It was always the
+preference, just never reported. `dotnet format style --diagnostics IDE0024 --severity warn` converts
+them.
+
+The package also sets Rider's wrap keys, but whether Rider reads them from a global analyzer config
+rather than `.editorconfig` is unverified. If Rider still puts the operator first when it wraps -
+producing fresh warnings - add them to your `.editorconfig`:
+
+```ini
+[*.cs]
+csharp_wrap_before_binary_opsign = false
+csharp_wrap_before_binary_pattern_op = false
+csharp_wrap_before_ternary_opsigns = false
 ```
 
 ## Upgrading from 2.1
@@ -146,6 +179,13 @@ before changing rules.
 ```
 
 Both run on pull requests as well as on `main`.
+
+Nota's own analysers live in `Nota.CodeAnalysis.Analysers`, their code fixes in
+`Nota.CodeAnalysis.Analysers.CodeFixes` - a separate assembly, because a fix needs Workspaces and the
+command-line compiler does not carry it. Both reference Roslyn 4.8 and must stay there or below: an
+analyser built against a newer compiler than the consumer's SDK is skipped with `CS9057`, a warning,
+and its rules silently vanish. `dotnet test` runs their unit tests in
+`Nota.CodeAnalysis.Analysers.Test`; a new rule goes in `AnalyzerReleases.Unshipped.md` as well.
 
 Releases are cut by tagging:
 

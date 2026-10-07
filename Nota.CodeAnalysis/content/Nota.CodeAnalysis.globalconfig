@@ -107,7 +107,18 @@ dotnet_naming_style.pascal_case.required_prefix =
 dotnet_naming_style.pascal_case.required_suffix = 
 dotnet_naming_style.pascal_case.word_separator = 
 dotnet_naming_style.pascal_case.capitalization = pascal_case
-dotnet_style_operator_placement_when_wrapping = beginning_of_line
+# A wrapped expression ends its line with the operator, and the next line starts with the operand.
+# dotnet_style_operator_placement_when_wrapping steers Roslyn's formatter when it rewraps, and the
+# csharp_wrap_before_* keys say the same to Rider's. Neither reports code that is already wrapped
+# the other way; NOTA0002, below, is what reports, and carries a code fix.
+#
+# The Rider keys are here in case Rider reads them from a global analyzer config, which is
+# unverified - Rider certainly reads them from .editorconfig, and a repository whose Rider still
+# wraps before the operator should copy these three lines there. Roslyn ignores them either way.
+dotnet_style_operator_placement_when_wrapping = end_of_line
+csharp_wrap_before_binary_opsign = false
+csharp_wrap_before_binary_pattern_op = false
+csharp_wrap_before_ternary_opsigns = false
 dotnet_style_coalesce_expression = true:suggestion
 dotnet_style_null_propagation = true:suggestion
 dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
@@ -150,7 +161,7 @@ csharp_style_prefer_top_level_statements = true:silent
 csharp_style_prefer_primary_constructors = true:suggestion
 csharp_style_expression_bodied_methods = false:silent
 csharp_style_expression_bodied_constructors = false:silent
-csharp_style_expression_bodied_operators = false:silent
+csharp_style_expression_bodied_operators = false:warning
 csharp_style_expression_bodied_properties = true:silent
 csharp_style_expression_bodied_indexers = true:silent
 csharp_style_expression_bodied_accessors = true:silent
@@ -557,6 +568,9 @@ dotnet_diagnostic.IDE0063WithoutSuggestion.severity = none
 dotnet_diagnostic.IDE0066.severity = none
 dotnet_diagnostic.IDE0066WithoutSuggestion.severity = none
 dotnet_diagnostic.IDE0290.severity = none
+# An operator leading a wrapped line, from this package's own analyser. Stated although warning is
+# already its default, so that what it is set to can be read here like every other rule.
+dotnet_diagnostic.NOTA0002.severity = warning
 dotnet_diagnostic.SA0000.severity = warning
 dotnet_diagnostic.SA1101.severity = none
 dotnet_diagnostic.SA1116.severity = none

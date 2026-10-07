@@ -1,0 +1,55 @@
+using System.Collections.Immutable;
+
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
+
+namespace Nota.CodeAnalysis.Analysers;
+
+/// <summary>
+/// NOTA0002: an operator that wraps a line ends the line it belongs to rather than leading the next.
+/// </summary>
+/// <remarks>
+/// <c>dotnet_style_operator_placement_when_wrapping</c> states the rule for Roslyn's formatter, and
+/// Rider's <c>csharp_wrap_before_*</c> settings state it for Rider, but neither reports code that
+/// already breaks it - IDE0055 steers a rewrap and does not audit what is there. This does.
+/// </remarks>
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class OperatorPlacementAnalyser : DiagnosticAnalyzer
+{
+    /// <summary>The diagnostic id.</summary>
+    public const string DiagnosticId = "NOTA0002";
+
+    private static readonly DiagnosticDescriptor Rule = new(
+        DiagnosticId,
+        "Operator leads a wrapped line",
+        "'{0}' leads its line; move it to the end of the line before and leave the rest of the expression as it is",
+        "Layout",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "When an expression wraps, the operator ends the line it follows and the next line starts with the operand. " +
+            "Moving the operator is the whole fix: a wrapped condition or ternary is fine as it is and does not need " +
+            "rewriting as an if/else.");
+
+    /// <inheritdoc/>
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+
+    /// <inheritdoc/>
+    public override void Initialize(AnalysisContext context)
+    {
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.EnableConcurrentExecution();
+        context.RegisterSyntaxTreeAction(AnalyseTree);
+    }
+
+    private static void AnalyseTree(SyntaxTreeAnalysisContext context)
+    {
+        SyntaxNode root = context.Tree.GetRoot(context.CancellationToken);
+        SourceText text = context.Tree.GetText(context.CancellationToken);
+
+        foreach (LeadingOperator leading in LeadingOperator.FindAll(root, text))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(Rule, leading.Operator.GetLocation(), leading.Operator.Text));
+        }
+    }
+}
